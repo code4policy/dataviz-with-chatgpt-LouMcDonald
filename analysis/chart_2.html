@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boston 311 Calls Horizontal Bar Chart</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 20px;
+            text-align: center;
+        }
+        .chart-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .chart-subtitle {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #6c757d;
+        }
+        .citation {
+            font-size: 10px;
+            color: #6c757d;
+            margin-top: 20px;
+        }
+        .bar {
+            fill: #4caf50;
+        }
+        .bar:hover {
+            fill: #ff5722;
+        }
+        .axis-label {
+            font-size: 14px;
+            fill: #333;
+        }
+        .button-container {
+            margin: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1 class="chart-title">Top 10 Reasons for 311 Calls in Boston (2023)</h1>
+    <p class="chart-subtitle">Visualizing the most common reasons for 311 calls</p>
+    <div class="button-container">
+        <button id="toggle-chart">Show Extended Chart</button>
+    </div>
+    <svg id="chart" width="800" height="600"></svg>
+    <p class="citation">Source: City of Boston | Visualization by Lou McDonald and D3</p>
+
+    <script>
+        const top10Data = [
+            { reason: "Enforcement & Abandoned Vehicles", count: 61541 },
+            { reason: "Sanitation", count: 59389 },
+            { reason: "Street Cleaning", count: 45659 },
+            { reason: "Code Enforcement", count: 31811 },
+            { reason: "Highway Maintenance", count: 25096 },
+            { reason: "Signs & Signals", count: 11209 },
+            { reason: "Trees", count: 10390 },
+            { reason: "Recycling", count: 9955 },
+            { reason: "Street Lights", count: 8499 },
+            { reason: "Building", count: 5209 }
+        ];
+
+        const extendedData = [
+            ...top10Data,
+            { reason: "Environmental Services", count: 4416 },
+            { reason: "Animal Issues", count: 4155 },
+            { reason: "Administrative & General Requests", count: 2025 },
+            { reason: "Abandoned Bicycle", count: 1318 },
+            { reason: "Air Pollution Control", count: 35 }
+        ];
+
+        const margin = { top: 40, right: 20, bottom: 50, left: 200 };
+        const width = 800 - margin.left - margin.right;
+        const height = 600 - margin.top - margin.bottom;
+
+        const svg = d3.select("#chart")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+          .append("g")
+            .attr("transform", `translate(${margin.left}, ${margin.top})`);
+
+        let currentData = top10Data;
+
+        const y = d3.scaleBand()
+            .padding(0.1);
+
+        const x = d3.scaleLinear()
+            .range([0, width]);
+
+        const renderChart = (data) => {
+            y.domain(data.map(d => d.reason))
+             .range([0, height]);
+
+            x.domain([0, d3.max(data, d => d.count)]);
+
+            svg.selectAll(".bar")
+                .data(data)
+                .join(
+                    enter => enter.append("rect")
+                        .attr("class", "bar")
+                        .attr("y", d => y(d.reason))
+                        .attr("x", 0)
+                        .attr("height", y.bandwidth())
+                        .attr("width", d => x(d.count))
+                        .on("mouseover", function() {
+                            d3.select(this).transition().duration(200).attr("fill", "#ff5722");
+                        })
+                        .on("mouseout", function() {
+                            d3.select(this).transition().duration(200).attr("fill", "#4caf50");
+                        }),
+                    update => update
+                        .transition().duration(500)
+                        .attr("y", d => y(d.reason))
+                        .attr("height", y.bandwidth())
+                        .attr("width", d => x(d.count)),
+                    exit => exit.remove()
+                );
+
+            svg.select(".y-axis")
+                .call(d3.axisLeft(y));
+
+            svg.select(".x-axis")
+                .call(d3.axisBottom(x));
+        };
+
+        svg.append("g")
+            .attr("class", "y-axis");
+
+        svg.append("g")
+            .attr("class", "x-axis")
+            .attr("transform", `translate(0, ${height})`);
+
+        renderChart(currentData);
+
+        document.getElementById("toggle-chart").addEventListener("click", () => {
+            currentData = currentData.length === top10Data.length ? extendedData : top10Data;
+            renderChart(currentData);
+        });
+
+        svg.append("text")
+            .attr("x", width / 2)
+            .attr("y", height + 40)
+            .attr("text-anchor", "middle")
+            .attr("class", "axis-label")
+            .text("Number of Calls");
+
+        svg.append("text")
+            .attr("x", -height / 2)
+            .attr("y", -margin.left + 20)
+            .attr("transform", "rotate(-90)")
+            .attr("text-anchor", "middle")
+            .attr("class", "axis-label")
+            .text("Reason for 311 Calls");
+    </script>
+</body>
+</html>
